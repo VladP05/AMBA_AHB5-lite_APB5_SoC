@@ -11,6 +11,8 @@ module ahb_to_apb_bridge(
     input   logic       [1:0]       htrans,
     input   logic       [31:0]      hwdata,
     input   logic       [2:0]       hsize,
+    input   logic       [3:0]       hprot,
+    input   logic                   hnonsec,
 
     output  logic       [31:0]      hrdata,
     output  logic                   hready,
@@ -24,6 +26,7 @@ module ahb_to_apb_bridge(
     output  logic                   pwrite,
     output  logic                   penable,
     output  logic       [3:0]       pstrb,
+    output  logic       [2:0]       pprot,
 
     input   logic       [31:0]      prdata,
     input   logic                   pready,
@@ -48,6 +51,8 @@ module ahb_to_apb_bridge(
     logic                   hwrite_reg;
     logic       [1:0]       psel_reg;
     logic       [2:0]       hsize_reg;
+    logic       [3:0]       hprot_reg;
+    logic                   hnonsec_reg;
 
     logic       [1:0]       state, next_state;
 
@@ -63,6 +68,8 @@ module ahb_to_apb_bridge(
             hwrite_reg <= 0;
             psel_reg <= 0;
             hsize_reg <= 0;
+            hprot_reg <= 0;
+            hnonsec_reg <= 0;
 
         end else if(valid_cpu_to_bridge_transfer) begin
 
@@ -70,6 +77,8 @@ module ahb_to_apb_bridge(
             hwrite_reg <= hwrite;
             psel_reg <= (haddr[7] == 1'b0) ? 2'b01 : 2'b10;   //slave 1 is from 0x00 to 0x7F, slave 2 is from 0x80 to 0xFF
             hsize_reg <= hsize;
+            hprot_reg <= hprot;
+            hnonsec_reg <= hnonsec;
 
         end
     end
@@ -195,10 +204,13 @@ module ahb_to_apb_bridge(
 
     end
 
-    assign  hrdata  = prdata;
-    assign  paddr   = haddr_reg;
-    assign  pwdata  = hwdata;
-    assign  pwrite  = hwrite_reg;
+    assign  hrdata      = prdata;
+    assign  paddr       = haddr_reg;
+    assign  pwdata      = hwdata;
+    assign  pwrite      = hwrite_reg;
+    assign  pprot[0]    = hprot_reg[1];
+    assign  pprot[1]    = hnonsec_reg;
+    assign  pprot[2]    = ~hprot_reg[0];
 
     always_comb begin
         
