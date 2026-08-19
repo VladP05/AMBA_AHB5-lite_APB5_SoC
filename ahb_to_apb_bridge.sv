@@ -106,12 +106,14 @@ module ahb_to_apb_bridge(
 
             ACCESS : begin
 
-                if(pready &&pslverr) begin
+                if(pready && pslverr) begin
                     next_state = ERROR;
-                end else if(pready) begin
-                    next_state = IDLE;
                 end else if(!pready) begin
                     next_state = ACCESS;
+                end else if(valid_cpu_to_bridge_transfer) begin
+                    next_state = SETUP;
+                end else begin
+                    next_state = IDLE;
                 end
 
             end
