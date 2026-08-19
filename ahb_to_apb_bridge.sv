@@ -33,6 +33,7 @@ module ahb_to_apb_bridge(
     localparam  IDLE                    = 2'b00;
     localparam  SETUP                   = 2'b01;
     localparam  ACCESS                  = 2'b10;
+    localparam  ERROR                   = 2'b11;
 
     localparam  HTRANS_IDLE             = 2'b00;
     localparam  HTRANS_BUSY             = 2'b01;
@@ -105,9 +106,11 @@ module ahb_to_apb_bridge(
 
             ACCESS : begin
 
-                if(pready) begin
+                if(pready &&pslverr) begin
+                    next_state = ERROR;
+                end else if(pready) begin
                     next_state = IDLE;
-                end else begin
+                end else if(!pready) begin
                     next_state = ACCESS;
                 end
 
@@ -125,7 +128,6 @@ module ahb_to_apb_bridge(
         psel        = 0;
         hready      = 1;
         hresp       = 0;
-        pstrb       = 0;
 
         case (state)
             
@@ -135,7 +137,6 @@ module ahb_to_apb_bridge(
                 psel        = 0;
                 hready      = 1;
                 hresp       = 0;     
-                pstrb       = 0;
 
             end
 
@@ -145,92 +146,38 @@ module ahb_to_apb_bridge(
                 penable     = 0;
                 hready      = 0;
                 hresp       = 0;
-                if(hwrite_reg) begin
-                    case(hsize_reg)
 
-                        BYTE : begin
-                            
-                            case (haddr_reg[1:0]) 
-                                
-                                2'b00 : pstrb = 4'b0001;
-                                2'b01 : pstrb = 4'b0010;
-                                2'b10 : pstrb = 4'b0100;
-                                2'b11 : pstrb = 4'b1000;
-                                default : pstrb = 4'b0000;
-
-                            endcase
-
-                        end
-
-                        HALF_WORD : begin
-
-                            case (haddr_reg[1:0])
-                                
-                                2'b00 : pstrb = 4'b0011;
-                                2'b10 : pstrb = 4'b1100;
-                                default : pstrb = 4'b0000;
-
-                            endcase
-
-                        end
-
-                        WORD : begin
-
-                            pstrb = 4'b1111;
-
-                        end
-
-                    endcase
-                end else begin
-                    pstrb   = 4'b0000;
-                end
             end
 
             ACCESS : begin
 
                 psel        = psel_reg;
                 penable     = 1;
-                hready      = pready;
-                hresp       = pready ? pslverr : 0;
-                if(hwrite_reg) begin
-                    case(hsize_reg)
+            
+                if(!pready) begin
 
-                        BYTE : begin
-                            
-                            case (haddr_reg[1:0]) 
-                                
-                                2'b00 : pstrb = 4'b0001;
-                                2'b01 : pstrb = 4'b0010;
-                                2'b10 : pstrb = 4'b0100;
-                                2'b11 : pstrb = 4'b1000;
-                                default : pstrb = 4'b0000;
+                    hready  = 0;
+                    hresp   = 0;
 
-                            endcase
+                end else if(pslverr) begin
 
-                        end
+                    hready  = 0;
+                    hresp   = 1;
 
-                        HALF_WORD : begin
-
-                            case (haddr_reg[1:0])
-                                
-                                2'b00 : pstrb = 4'b0011;
-                                2'b10 : pstrb = 4'b1100;
-                                default : pstrb = 4'b0000;
-
-                            endcase
-
-                        end
-
-                        WORD : begin
-
-                            pstrb = 4'b1111;
-
-                        end
-
-                    endcase
                 end else begin
-                    pstrb   = 4'b0000;
+
+                    hready  = 1;
+                    hresp   = 0;
+
                 end
+
+            end
+
+            ERROR : begin
+
+                hready      = 1;
+                hresp       = 1;
+
             end
 
             default : begin
@@ -239,7 +186,6 @@ module ahb_to_apb_bridge(
                 psel        = 0;
                 hready      = 1;
                 hresp       = 0;
-                pstrb       = 0;
 
             end
 
@@ -251,5 +197,51 @@ module ahb_to_apb_bridge(
     assign  paddr   = haddr_reg;
     assign  pwdata  = hwdata;
     assign  pwrite  = hwrite_reg;
+
+    always_comb begin
+        
+        if(hwrite_reg) begin
+            case(hsize_reg)
+
+                BYTE : begin
+                            
+                    case (haddr_reg[1:0]) 
+                                
+                        2'b00 : pstrb = 4'b0001;
+                        2'b01 : pstrb = 4'b0010;
+                         2'b10 : pstrb = 4'b0100;
+                        2'b11 : pstrb = 4'b1000;
+                        default : pstrb = 4'b0000;
+
+                    endcase
+
+                end
+
+                HALF_WORD : begin
+
+                    case (haddr_reg[1:0])
+                                
+                        2'b00 : pstrb = 4'b0011;
+                        2'b10 : pstrb = 4'b1100;
+                        default : pstrb = 4'b0000;
+
+                    endcase
+
+                end
+
+                WORD : begin
+
+                    pstrb = 4'b1111;
+
+                end
+
+                default : pstrb = 4'b0000;
+
+            endcase
+        end else begin
+            pstrb   = 4'b0000;
+        end
+
+    end
 
 endmodule
