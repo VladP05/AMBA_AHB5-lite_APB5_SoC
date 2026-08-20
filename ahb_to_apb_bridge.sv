@@ -5,31 +5,31 @@ module ahb_to_apb_bridge(
 
     //signals for the ahb_side:
 
-    input   logic                   hsel,
     input   logic       [31:0]      haddr,
-    input   logic                   hwrite,
+    input   logic       [3:0]       hprot,
+    input   logic                   hsel,
+    input   logic       [2:0]       hsize,
+    input   logic                   hnonsec,
     input   logic       [1:0]       htrans,
     input   logic       [31:0]      hwdata,
-    input   logic       [2:0]       hsize,
-    input   logic       [3:0]       hprot,
-    input   logic                   hnonsec,
+    input   logic                   hwrite,
 
-    output  logic       [31:0]      hrdata,
     output  logic                   hready,
+    output  logic       [31:0]      hrdata,
     output  logic                   hresp,
 
     //signals for the apb_side:
 
-    output  logic       [1:0]       psel,
     output  logic       [31:0]      paddr,
-    output  logic       [31:0]      pwdata,
-    output  logic                   pwrite,
-    output  logic                   penable,
-    output  logic       [3:0]       pstrb,
     output  logic       [2:0]       pprot,
+    output  logic       [1:0]       psel,
+    output  logic                   penable,
+    output  logic                   pwrite,
+    output  logic       [31:0]      pwdata,
+    output  logic       [3:0]       pstrb,
 
-    input   logic       [31:0]      prdata,
     input   logic                   pready,
+    input   logic       [31:0]      prdata,
     input   logic                   pslverr
 );
 
