@@ -45,7 +45,7 @@ module ahb_to_apb_bridge(
 
     localparam  BYTE                    =3'b000;
     localparam  HALF_WORD               =3'b001;
-    localparam  WORD                    =3'b010;    
+    localparam  WORD                    =3'b010;
 
     logic       [31:0]      haddr_reg;
     logic                   hwrite_reg;
