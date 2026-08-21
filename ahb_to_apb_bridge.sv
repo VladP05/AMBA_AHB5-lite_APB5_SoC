@@ -127,6 +127,12 @@ module ahb_to_apb_bridge(
 
             end
 
+            ERROR : begin
+
+                next_state = IDLE;
+
+            end
+
             default : next_state = IDLE;
 
         endcase
