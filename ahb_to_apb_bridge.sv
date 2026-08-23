@@ -75,7 +75,7 @@ module ahb_to_apb_bridge(
 
             haddr_reg <= haddr;
             hwrite_reg <= hwrite;
-            psel_reg <= (haddr[7] == 1'b0) ? 2'b01 : 2'b10;   //slave 1 is from 0x00 to 0x7F, slave 2 is from 0x80 to 0xFF
+            psel_reg <= (haddr[7] == 1'b0) ? 2'b01 : 2'b10;   //slave 1 is from 0x00000000 to 0x0000007F, slave 2 is from 0x00000080 to 0x000000FF
             hsize_reg <= hsize;
             hprot_reg <= hprot;
             hnonsec_reg <= hnonsec;
@@ -229,7 +229,7 @@ module ahb_to_apb_bridge(
                                 
                         2'b00 : pstrb = 4'b0001;
                         2'b01 : pstrb = 4'b0010;
-                         2'b10 : pstrb = 4'b0100;
+                        2'b10 : pstrb = 4'b0100;
                         2'b11 : pstrb = 4'b1000;
                         default : pstrb = 4'b0000;
 
