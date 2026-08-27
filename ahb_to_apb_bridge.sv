@@ -13,8 +13,9 @@ module ahb_to_apb_bridge(
     input   logic       [1:0]       htrans,
     input   logic       [31:0]      hwdata,
     input   logic                   hwrite,
+    input   logic                   hready_in,
 
-    output  logic                   hready,
+    output  logic                   hready_out,
     output  logic       [31:0]      hrdata,
     output  logic                   hresp,
 
@@ -43,9 +44,9 @@ module ahb_to_apb_bridge(
     localparam  HTRANS_NONSEQ           = 2'b10;
     localparam  HTRANS_SEQ              = 2'b11;
 
-    localparam  BYTE                    =3'b000;
-    localparam  HALF_WORD               =3'b001;
-    localparam  WORD                    =3'b010;
+    localparam  BYTE                    = 3'b000;
+    localparam  HALF_WORD               = 3'b001;
+    localparam  WORD                    = 3'b010;
 
     logic       [31:0]      haddr_reg;
     logic                   hwrite_reg;
@@ -58,7 +59,7 @@ module ahb_to_apb_bridge(
 
     logic                   valid_cpu_to_bridge_transfer;
 
-    assign  valid_cpu_to_bridge_transfer = hsel && (htrans == HTRANS_NONSEQ || htrans == HTRANS_SEQ) && hready;
+    assign  valid_cpu_to_bridge_transfer = hsel && (htrans == HTRANS_NONSEQ || htrans == HTRANS_SEQ) && hready_in;
 
     always_ff @(posedge clk or negedge rst_n) begin
         
@@ -141,28 +142,28 @@ module ahb_to_apb_bridge(
 
     always_comb begin
         
-        penable     = 0;
-        psel        = 0;
-        hready      = 1;
-        hresp       = 0;
+        penable         = 0;
+        psel            = 0;
+        hready_out      = 1;
+        hresp           = 0;
 
         case (state)
             
             IDLE : begin
 
-                penable     = 0;
-                psel        = 0;
-                hready      = 1;
-                hresp       = 0;     
+                penable         = 0;
+                psel            = 0;
+                hready_out      = 1;
+                hresp           = 0;     
 
             end
 
             SETUP : begin
 
-                psel        = psel_reg;
-                penable     = 0;
-                hready      = 0;
-                hresp       = 0;
+                psel            = psel_reg;
+                penable         = 0;
+                hready_out      = 0;
+                hresp           = 0;
 
             end
 
@@ -173,18 +174,18 @@ module ahb_to_apb_bridge(
             
                 if(!pready) begin
 
-                    hready  = 0;
-                    hresp   = 0;
+                    hready_out  = 0;
+                    hresp       = 0;
 
                 end else if(pslverr) begin
 
-                    hready  = 0;
-                    hresp   = 1;
+                    hready_out  = 0;
+                    hresp       = 1;
 
                 end else begin
 
-                    hready  = 1;
-                    hresp   = 0;
+                    hready_out  = 1;
+                    hresp       = 0;
 
                 end
 
@@ -192,17 +193,17 @@ module ahb_to_apb_bridge(
 
             ERROR : begin
 
-                hready      = 1;
-                hresp       = 1;
+                hready_out      = 1;
+                hresp           = 1;
 
             end
 
             default : begin
 
-                penable     = 0;
-                psel        = 0;
-                hready      = 1;
-                hresp       = 0;
+                penable         = 0;
+                psel            = 0;
+                hready_out      = 1;
+                hresp           = 0;
 
             end
 
