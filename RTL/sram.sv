@@ -93,6 +93,14 @@ module sram(
                 endcase
             end
 
+            if(!hwrite && !haddr[10] && hready_in && hsel && (htrans == HTRANS_NONSEQ || htrans == HTRANS_SEQ) && !error) begin
+                if(hwrite_reg && (haddr[9:2] == haddr_reg[9:2])) begin
+                    hrdata <= hwdata;
+                end else begin
+                    hrdata <= mem[haddr[9:2]];
+                end
+            end
+
             if(!hready_out && hresp) begin
                 hready_out  <= 1;
                 hresp       <= 1;
@@ -107,7 +115,6 @@ module sram(
         end
     end
 
-    assign  hrdata      = mem[haddr_reg[9:2]];
     assign  msb         = haddr[10];
 
 endmodule
