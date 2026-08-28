@@ -107,10 +107,10 @@ The `peripheral_slave2` module is an 8-bit General-Purpose Input/Output (GPIO) c
 
 ### 5.2 Edge Detection & Interrupt Logic
 * **Rising Edge Detection:** The module tracks previous input states using an internal 8-bit register `prev_gpio_in`. A positive edge is detected via:
-  $$\text{pos\_edge\_detector}[i] = \sim\text{prev\_gpio\_in}[i] \;\&\; \text{gpio\_in}[i]$$
+  `pos_edge_detector[i] = ~prev_gpio_in[i] & gpio_in[i]`
 * **Status Latching:** When `pos_edge_detector[i]` is asserted and `int_en_reg[i] == 1`, `int_status_reg[i]` is latched to `1`.
 * **Interrupt Request (`irq`):** The output signal `irq` represents a bitwise OR reduction of all pending status bits:
-  $$\text{irq} = |\,\text{int\_status\_reg}$$
+  `irq = |int_status_reg`
   If at least one unmasked interrupt is active, `irq` remains asserted high (`1`).
 
 ### 5.3 Write-1-to-Clear (W1C) Mechanism
