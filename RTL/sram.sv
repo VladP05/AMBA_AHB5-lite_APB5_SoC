@@ -37,7 +37,12 @@ module sram(
     logic           hwrite_reg;
 
     logic           msb;
+    logic           access_violation;
+    logic           error;
 
+    assign access_violation = (haddr[9:8] == 2'b00) && !hprot[1];
+    assign error            = msb || access_violation;
+    //!access_violation: incearca sa acceseze o adresa pulica sau utliziator privilegiat
     always_ff @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
             haddr_reg   <= 0;
@@ -48,7 +53,7 @@ module sram(
             hready_out  <= 1;
             hresp       <= 0;
         end else begin
-            if(hready_in && hsel && (htrans == HTRANS_NONSEQ || htrans == HTRANS_SEQ) && !msb) begin
+            if(hready_in && hsel && (htrans == HTRANS_NONSEQ || htrans == HTRANS_SEQ) && !error) begin
                 haddr_reg   <= haddr[10:0];
                 hprot_reg   <= hprot;
                 hsize_reg   <= hsize;
@@ -87,11 +92,11 @@ module sram(
                     default : ;
                 endcase
             end
-            
+
             if(!hready_out && hresp) begin
                 hready_out  <= 1;
                 hresp       <= 1;
-            end else if(hready_in && msb && hsel && (htrans == HTRANS_NONSEQ || htrans == HTRANS_SEQ)) begin
+            end else if(hready_in && error && hsel && (htrans == HTRANS_NONSEQ || htrans == HTRANS_SEQ)) begin
                 hready_out  <= 0;
                 hresp       <= 1;
             end else begin
