@@ -24,5 +24,5 @@ Small SoC bus interconnect design written in SystemVerilog. It connects an AHB-L
 | Module | Address Range | Size | Protocol |
 |---|---|---|---|
 | SRAM | `0x0000_0000 - 0x0000_03FF` | 1 KB | AHB-Lite |
-| APB GPIO | `0x4000_0000 - 0x4000_00FF` | 256 B | APB |
-| APB Timer | `0x4000_0100 - 0x4000_01FF` | 256 B | APB |
+| APB GPIO | `0x4000_0000 - 0x4000_007F` | 128 B | APB |
+| APB Timer | `0x4000_0080 - 0x4000_00FF` | 128 B | APB |
