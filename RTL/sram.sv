@@ -29,19 +29,18 @@ module sram(
 
     logic   [31:0]  mem [0:255];
 
-    logic   [10:0]  haddr_reg; //8 biti pt adresa, 2 biti pt octet
+    logic   [9:0]   haddr_reg; //8 biti pt adresa, 2 biti pt octet
     logic   [3:0]   hprot_reg;
-    logic           hsel_reg;
     logic   [2:0]   hsize_reg;
     logic           hnonsec_reg;
     logic           hwrite_reg;
 
-    logic           msb;
     logic           access_violation;
+    logic           out_of_range_address;
     logic           error;
 
     assign access_violation = (haddr[9:8] == 2'b00) && !hprot[1];
-    assign error            = msb || access_violation;
+    assign error            = out_of_range_address || access_violation;
     //!access_violation: incearca sa acceseze o adresa pulica sau utliziator privilegiat
     always_ff @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
@@ -53,68 +52,91 @@ module sram(
             hready_out  <= 1;
             hresp       <= 0;
         end else begin
-            if(hready_in && hsel && (htrans == HTRANS_NONSEQ || htrans == HTRANS_SEQ) && !error) begin
-                haddr_reg   <= haddr[10:0];
-                hprot_reg   <= hprot;
-                hsize_reg   <= hsize;
-                hnonsec_reg <= hnonsec;
-                hwrite_reg  <= hwrite;
-            end else begin
-                haddr_reg   <= 0;
-                hprot_reg   <= 0;
-                hsize_reg   <= 0;
-                hnonsec_reg <= 0;
-                hwrite_reg  <= 0;
-            end
-
-            if(hwrite_reg && !haddr_reg[10]) begin  
-                case (hsize_reg)
-                    BYTE : begin
-                        case (haddr_reg[1:0])
-                            2'b00 : mem[haddr_reg[9:2]][7:0]    <= hwdata[7:0];
-                            2'b01 : mem[haddr_reg[9:2]][15:8]   <= hwdata[15:8];
-                            2'b10 : mem[haddr_reg[9:2]][23:16]  <= hwdata[23:16];
-                            2'b11 : mem[haddr_reg[9:2]][31:24]  <= hwdata[31:24];
-                        endcase
-                    end
-
-                    HALF_WORD : begin
-                        case (haddr_reg[1:0])
-                            2'b00 : mem[haddr_reg[9:2]][15:0]   <= hwdata[15:0];
-                            2'b10 : mem[haddr_reg[9:2]][31:16]  <= hwdata[31:16];
-                        endcase
-                    end
-
-                    WORD : begin
-                        mem[haddr_reg[9:2]]                     <= hwdata;
-                    end
-
-                    default : ;
-                endcase
-            end
-
-            if(!hwrite && !haddr[10] && hready_in && hsel && (htrans == HTRANS_NONSEQ || htrans == HTRANS_SEQ) && !error) begin
-                if(hwrite_reg && (haddr[9:2] == haddr_reg[9:2])) begin
-                    hrdata <= hwdata;
+            if(hready_in) begin
+                if(hsel && (htrans == HTRANS_NONSEQ || htrans == HTRANS_SEQ) && !error) begin
+                    haddr_reg   <= haddr[9:0];
+                    hprot_reg   <= hprot;
+                    hsize_reg   <= hsize;
+                    hnonsec_reg <= hnonsec;
+                    hwrite_reg  <= hwrite;
                 end else begin
-                    hrdata <= mem[haddr[9:2]];
+                    haddr_reg   <= 0;
+                    hprot_reg   <= 0;
+                    hsize_reg   <= 0;
+                    hnonsec_reg <= 0;
+                    hwrite_reg  <= 0;
                 end
             end
-
+        
             if(!hready_out && hresp) begin
                 hready_out  <= 1;
                 hresp       <= 1;
+                hwrite_reg  <= 0;
             end else if(hready_in && error && hsel && (htrans == HTRANS_NONSEQ || htrans == HTRANS_SEQ)) begin
                 hready_out  <= 0;
                 hresp       <= 1;
+                hwrite_reg  <= 0;
             end else begin
                 hready_out  <= 1;
                 hresp       <= 0;
             end
-
+        
         end
     end
 
-    assign  msb         = haddr[10];
+    always_ff @(posedge clk) begin
+        if(hwrite_reg) begin
+            case (hsize_reg)
+                BYTE : begin
+                    case (haddr_reg[1:0])
+                        2'b00 : mem[haddr_reg[9:2]][7:0]    <= hwdata[7:0];
+                        2'b01 : mem[haddr_reg[9:2]][15:8]   <= hwdata[15:8];
+                        2'b10 : mem[haddr_reg[9:2]][23:16]  <= hwdata[23:16];
+                        2'b11 : mem[haddr_reg[9:2]][31:24]  <= hwdata[31:24];
+                    endcase
+                end
+                HALF_WORD : begin
+                    case (haddr_reg[1:0])
+                        2'b00 : mem[haddr_reg[9:2]][15:0]   <= hwdata[15:0];
+                        2'b10 : mem[haddr_reg[9:2]][31:16]  <= hwdata[31:16];
+                    endcase
+                end
+                WORD : begin
+                    mem[haddr_reg[9:2]]                     <= hwdata;
+                end
+                default : ;
+            endcase
+        end
+
+        if(!hwrite && hready_in && hsel && (htrans == HTRANS_NONSEQ || htrans == HTRANS_SEQ) && !error) begin
+            if(hwrite_reg && (haddr[9:2] == haddr_reg[9:2])) begin
+                case(hsize_reg)
+                    WORD        : begin
+                        hrdata  <= hwdata;
+                    end
+                    HALF_WORD   : begin
+                        case(haddr_reg[1:0])
+                            2'b00 : hrdata  <= {mem[haddr[9:2]][31:16], hwdata[15:0]};
+                            2'b10 : hrdata  <= {hwdata[31:16], mem[haddr[9:2]][15:0]};
+                        endcase
+                    end
+                    BYTE        : begin
+                        case(haddr_reg[1:0])
+                            2'b00 : hrdata  <= {mem[haddr[9:2]][31:8],      hwdata[7:0]};
+                            2'b01 : hrdata  <= {mem[haddr[9:2]][31:16],     hwdata[15:8],   mem[haddr[9:2]][7:0]};
+                            2'b10 : hrdata  <= {mem[haddr[9:2]][31:24],     hwdata[23:16],  mem[haddr[9:2]][15:0]};
+                            2'b11 : hrdata  <= {hwdata[31:24],              mem[haddr[9:2]][23:0]};
+                        endcase
+                    end
+                    default     : hrdata    <= mem[haddr[9:2]];
+                endcase
+            end else begin
+                hrdata <= mem[haddr[9:2]];
+            end
+        end
+
+    end     
+
+    assign  out_of_range_address    = (haddr[31:10] != 0);
 
 endmodule
