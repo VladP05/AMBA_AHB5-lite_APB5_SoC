@@ -23,10 +23,10 @@ module peripheral_slave2(
 
 );
 
-    logic       [7:0]       dataout_reg;    //rw
-    logic       [7:0]       direction_reg;  //rw
-    logic       [7:0]       int_en_reg;     //rw
-    logic       [7:0]       int_status_reg; //w1c
+    logic       [7:0]       dataout_reg;    
+    logic       [7:0]       direction_reg;  
+    logic       [7:0]       int_en_reg;     
+    logic       [7:0]       int_status_reg; 
 
     logic       [7:0]       prev_gpio_in;
     logic       [7:0]       pos_edge_detector;

@@ -1,7 +1,9 @@
+import macros_pkg::*;
+
 module ahb_to_apb_bridge(
 
-    input   logic               clk,
-    input   logic               rst_n,
+    input   logic                   clk,
+    input   logic                   rst_n,
 
     //signals for the ahb_side:
 
@@ -38,15 +40,6 @@ module ahb_to_apb_bridge(
     localparam  SETUP                   = 2'b01;
     localparam  ACCESS                  = 2'b10;
     localparam  ERROR                   = 2'b11;
-
-    localparam  HTRANS_IDLE             = 2'b00;
-    localparam  HTRANS_BUSY             = 2'b01;
-    localparam  HTRANS_NONSEQ           = 2'b10;
-    localparam  HTRANS_SEQ              = 2'b11;
-
-    localparam  BYTE                    = 3'b000;
-    localparam  HALF_WORD               = 3'b001;
-    localparam  WORD                    = 3'b010;
 
     logic       [31:0]      haddr_reg;
     logic                   hwrite_reg;
